@@ -13,6 +13,7 @@ public class Shelf {
 
     public Shelf() {
 
+        this(0, "");
     }
 
     public Shelf(int num, String subject) {
@@ -22,7 +23,7 @@ public class Shelf {
     }
 
     public Code addBook(Book aBook) {
-        if (books.containsKey(aBook)) {
+        if (books.containsKey(aBook) && this != null) {
             books.put(aBook, (books.get(aBook) + 1));
             return Code.SUCCESS;
         } else {
@@ -58,14 +59,19 @@ public class Shelf {
     public String listBooks() {
         StringBuilder sb = new StringBuilder();
         int num = 0;
-        Book[] allBooks = (Book[]) books.keySet().toArray();
+        Object[] allBooks =  books.keySet().toArray();
         for(int i = 0; i < allBooks.length; i++) {
-            num += getBookCount(allBooks[i]);
+            num += getBookCount((Book) allBooks[i]);
         }
         sb.append(num);
         sb.append(" books on shelf: ");
         sb.append(this.toString());
-        sb.append(books.toString());
+        for (int i = 0; i < allBooks.length; i++) {
+            sb.append(allBooks[i].toString());
+            sb.append(" ");
+            sb.append(getBookCount((Book) allBooks[i]));
+            sb.append("\n");
+        }
         return sb.toString();
     }
 
