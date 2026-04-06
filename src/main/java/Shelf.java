@@ -3,6 +3,14 @@ import Utilities.Code;
 import java.util.HashMap;
 import java.util.Objects;
 
+/**
+ * @title Shelf.java
+ * @abstract part of Library project dealing with logic representing bookshelves in a library.
+ * @author Isabelle Johnson
+ * @version 1.0.0
+ * @Since 4/6/26
+ **/
+
 public class Shelf {
 
     public static final int SHELF_NUMBER_ = 0;
@@ -22,6 +30,13 @@ public class Shelf {
         this.books = new HashMap<Book, Integer>();
     }
 
+    /**
+     * Checks to see if another instance of aBook (same title) is in the books HashMap. If true adds 1 to the value to
+     * the key of aBook, otherwise makes new key-value pair with 1 as the integer value.
+     *
+     * @param aBook book to be added to the shelf
+     * @return code depending on if the book was successfully added or not
+     */
     public Code addBook(Book aBook) {
         if (books.containsKey(aBook) && this != null) {
             books.put(aBook, (books.get(aBook) + 1));
@@ -36,6 +51,11 @@ public class Shelf {
         }
     }
 
+    /**
+     * returns the integer value associated with aBook as a key in books HashMap.
+     * @param aBook a book to get its count of on the shelf
+     * @return number of instances of aBook on the shelf, returns -1 if there is no key for aBook in books
+     */
     public int getBookCount(Book aBook) {
         if (!books.containsKey(aBook)) {
             return -1;
@@ -56,6 +76,13 @@ public class Shelf {
     }
 
 
+    /**
+     * parses through each key in books HashMap using keySet().toArray() to put in usable array and to parse through
+     * each key to get its count to determine overall book count. Then parses through each indivdual key and prints its
+     * Book class String and count.
+     *
+     * @return string listing the shelf information and all the books and quantities of books on the shelf
+     */
     public String listBooks() {
         StringBuilder sb = new StringBuilder();
         int num = 0;
@@ -75,6 +102,14 @@ public class Shelf {
         return sb.toString();
     }
 
+    /**
+     * First checks that the key of aBook is on the shelf and there is at least 1 of those books, then removes 1 book
+     * from that key. Also has checks resulting in invalid returns for cases where there are 0 books on the shelf with
+     * a key and when the book it not a key in the books HashMap.
+     *
+     * @param aBook book to remove from the shelf
+     * @return returns code used to show if a book was successfully removed or not.
+     */
     public Code removeBook(Book aBook) {
         if (books.containsKey(aBook) && books.get(aBook) > 0) {
             books.put(aBook, books.get(aBook) - 1);
