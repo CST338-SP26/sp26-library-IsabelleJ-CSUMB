@@ -10,9 +10,9 @@ import java.util.Scanner;
 
 public class Library {
 
-    public static final int LENDING_LIMIT = 0;
+    public static final int LENDING_LIMIT = 5;
     private HashMap<Book, Integer> books;
-    private int libraryCard;
+    private static int libraryCard;
     private String name;
     private List<Reader> readers;
     private HashMap<String, Shelf> shelves;
@@ -55,8 +55,36 @@ public class Library {
         return null;
     }
 
-    public Code checkOutBook(Reader aReader, Book Abook) {
-        return null;
+    public Code checkOutBook(Reader reader, Book book) {
+        Code tempCode;
+        if(!readers.contains(reader)) {
+            System.out.println(reader.getName() + " doesn't have an account here");
+            return Code.READER_NOT_IN_LIBRARY_ERROR;
+        } else {
+            if(reader.getBookCount() >= LENDING_LIMIT) {
+                System.out.println(reader.getName() + " has reached the lending limit, " + LENDING_LIMIT);
+                return Code.BOOK_LIMIT_REACHED_ERROR;
+            } else {
+                if(!books.containsKey(book)) {
+                    System.out.println("ERROR: could not find " + book);
+                    return Code.SHELF_EXISTS_ERROR;
+                } else if(books.get(book) < 1) {
+                    System.out.println("ERROR: no copies of " + book + "remain");
+                    return Code.BOOK_NOT_IN_INVENTORY_ERROR;
+                } else {
+                    tempCode = reader.addBook(book);
+                    if (tempCode != Code.SUCCESS) {
+                        System.out.println("Couldn't check out " + book);
+                        return tempCode;
+                    }
+                    tempCode = shelves.get(book.getSubject()).removeBook(book);
+                    if (tempCode == Code.SUCCESS) {
+                        System.out.println(book + " checked out successfully");
+                    }
+                    return tempCode;
+                }
+            }
+        }
     }
 
     public LocalDate convertDate(String dateString, Code aCode) {
@@ -137,34 +165,86 @@ public class Library {
         return Code.SUCCESS;
     }
 
-    //TODO need clarification on how to do this because there must be some way to csv read that i dont know of
     private Code initBooks(int bookCount, Scanner scan) {
-//        ArrayList<Book> books = new ArrayList<>();
-//        String currentString;
-//        if (bookCount < 1) {
-//            return Code.LIBRARY_ERROR;
-//        }
-//        for (int i = 0; i < bookCount; i++) {
-//            books.add(new Book(null, null, null, -1, null, null));
-//            currentString = scan.fi
-//            books.get(i).setAuthor(currentString.substring(0, currentString.));
-//
-//        }
-        return null;
+        Book currentBook;
+        String currentString;
+        String[] components = new String[6];
+        if (bookCount < 1) {
+            return Code.LIBRARY_ERROR;
+        }
+        for (int i = 0; i < bookCount; i++) {
+            currentBook = (new Book(null, null, null, -1, null, null));
+            currentString = scan.nextLine();
+            for (int j = 0; j < components.length; j++) {
+                if(currentString.equals("")) {
+                    return Code.BOOK_RECORD_COUNT_ERROR;
+                }
+                components[i] = currentString.substring(0, currentString.indexOf(","));
+                currentString = currentString.substring(currentString.indexOf(","));
+            }
+            currentBook.setAuthor(components[Book.AUTHOR_]);
+            currentBook.setISBN(components[Book.ISBN_]);
+            currentBook.setDueDate(convertDate(components[Book.DUE_DATE_], Code.DATE_CONVERSION_ERROR));
+            currentBook.setSubject(components[Book.SUBJECT_]);
+            currentBook.setTitle(components[Book.TITLE_]);
+            currentBook.setPageCount(convertInt(components[Book.PAGE_COUNT_], Code.PAGE_COUNT_ERROR));
+            if(currentBook.getDueDate() == null) {
+                return Code.DATE_CONVERSION_ERROR;
+            } else if (currentBook.getPageCount() >1) {
+                return Code.PAGE_COUNT_ERROR;
+            }
+            addBook(currentBook);
+        }
+        return Code.SUCCESS;
     }
 
-    //TODO need clarification on how to do this because there must be some way to csv read that i dont know of
+    //TODO substring each element into a string array then set them according to the final values in the class def
     public Code initReader(int num, Scanner aScanner) {
         return null;
     }
 
-    //TODO need clarification on how to do this because there must be some way to csv read that i dont know of
-    public Code initShelves(int num, Scanner aScanner) {
-        return null;
+    public Code initShelves(int shelfCount, Scanner scan) {
+        Shelf currentShelf;
+        String currentString;
+        String[] components = new String[2];
+        if (shelfCount < 1) {
+            return Code.SHELF_COUNT_ERROR;
+        }
+        for (int i = 0; i < shelfCount; i++) {
+            currentShelf = new Shelf();
+            currentString = scan.nextLine();
+            for (int j = 0; j < components.length; j++) {
+                components[i] = currentString.substring(0, currentString.indexOf(","));
+                currentString = currentString.substring(currentString.indexOf(","));
+            }
+            currentShelf.setSubject(components[Shelf.SUBJECT_]);
+            currentShelf.setShelfNumber(convertInt(components[Shelf.SHELF_NUMBER_], Code.SHELF_NUMBER_PARSE_ERROR));
+
+            if (currentShelf.getShelfNumber() > 1) {
+                return Code.SHELF_NUMBER_PARSE_ERROR;
+            }
+            addShelf(currentShelf);
+
+        }
+        if(shelfCount == shelves.size()) {
+            return Code.SUCCESS;
+        } else {
+            return Code.SHELF_NUMBER_PARSE_ERROR;
+        }
     }
 
     public int listBooks() {
-        return 0;
+        StringBuilder sb = new StringBuilder();
+        int totalBooks = 0;
+        Object[] allBooks = books.keySet().toArray();
+        for (int i = 0; i < allBooks.length; i++) {
+            totalBooks += books.get(allBooks[i]);
+            sb.append(books.get(allBooks[i]));
+            sb.append(" copies of ");
+            sb.append(allBooks[i]);
+            sb.append("\n");
+        }
+        return totalBooks;
     }
 
     public int listReaders() {
@@ -228,7 +308,5 @@ public class Library {
             return Code.UNKNOWN_ERROR;
         }
     }
-
-
 
 }
