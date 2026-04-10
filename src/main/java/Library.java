@@ -3,7 +3,6 @@ import Utilities.Code;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
@@ -48,11 +47,28 @@ public class Library {
     }
 
     public Code addShelf(Shelf aShelf) {
-        return null;
+        if(shelves.containsKey(aShelf.getSubject())) {
+            System.out.println("ERROR: Shelf already exists" + shelves.get(aShelf.getSubject()));
+            return Code.SHELF_EXISTS_ERROR;
+        } else {
+            aShelf.setShelfNumber(shelves.size() + 1);
+            shelves.put(aShelf.getSubject(), aShelf);
+            Object[] allBooks = books.keySet().toArray();
+            Book temp;
+            for (int i = 0; i < allBooks.length; i++) {
+                temp = (Book) allBooks[i];
+                if (temp.getSubject().equals(aShelf.getSubject())) {
+                    shelves.get(aShelf.getSubject()).addBook(temp);
+                }
+            }
+        }
+        return Code.SUCCESS;
     }
 
-    public Code addShelf(String aString) {
-        return null;
+    public Code addShelf(String shelfSubject) {
+        Shelf tempShelf = new Shelf();
+        tempShelf.setSubject(shelfSubject);
+        return addShelf(tempShelf);
     }
 
     public Code checkOutBook(Reader reader, Book book) {
@@ -100,6 +116,15 @@ public class Library {
     }
 
     public Book getBookByISBN(String isbn) {
+        Object[] allBooks = books.keySet().toArray();
+        Book temp;
+        for (int i = 0; i < allBooks.length; i++) {
+            temp = (Book) allBooks[i];
+            if((temp.getISBN().equals(isbn))) {
+                return temp;
+            }
+        }
+        System.out.println("ERROR: Could not find a book with isbn: " + isbn);
         return null;
     }
 
@@ -111,7 +136,7 @@ public class Library {
         return this.name;
     }
 
-    public String getReaderByCard(int cardNum) {
+    public Reader getReaderByCard(int cardNum) {
         return null;
     }
 
@@ -198,9 +223,37 @@ public class Library {
         return Code.SUCCESS;
     }
 
-    //TODO substring each element into a string array then set them according to the final values in the class def
-    public Code initReader(int num, Scanner aScanner) {
-        return null;
+    public Code initReader(int readerCount, Scanner scan) {
+        Reader currentReader;
+        String currentString;
+        Book checkBook;
+        String[] components = new String[5];
+        if (readerCount < 1) {
+            return Code.READER_COUNT_ERROR;
+        }
+        for (int i = 0; i < readerCount; i++) {
+            currentReader = (new Reader(-1, null, null));
+            currentString = scan.nextLine();
+            for (int j = 0; j < components.length; j++) {
+                if(currentString.equals("")) {
+                    return Code.BOOK_RECORD_COUNT_ERROR;
+                }
+                components[i] = currentString.substring(0, currentString.indexOf(","));
+                currentString = currentString.substring(currentString.indexOf(","));
+            }
+            checkBook = getBookByISBN(components[Reader.BOOK_COUNT_]);
+            if (!books.containsKey(checkBook)) {
+                System.out.println("ERROR");
+            }
+            currentReader.setName(components[Reader.NAME_]);
+            currentReader.setPhone(components[Reader.PHONE_]);
+            currentReader.getBooks().get(i).setDueDate(convertDate(components[Reader.BOOK_START_], Code.DUE_DATE_ERROR));
+            currentReader.setCardNumber(convertInt(components[Reader.CARD_NUMBER_], Code.READER_CARD_NUMBER_ERROR));
+            checkOutBook(currentReader, currentReader.getBooks().get(i));
+            addReader(currentReader);
+
+        }
+        return Code.SUCCESS;
     }
 
     public Code initShelves(int shelfCount, Scanner scan) {
@@ -255,12 +308,21 @@ public class Library {
         return 0;
     }
 
-    public int listShelves(boolean aBool) {
-        return 0;
+    public int listShelves(boolean showBooks) {
+        String[] allShelves = (String[]) shelves.keySet().toArray();
+        for (int i = 0; i < shelves.size(); i++) {
+
+            if(showBooks == true) {
+                shelves.get(allShelves[i]).listBooks();
+            } else {
+                System.out.println(allShelves[i]);
+            }
+        }
+        return shelves.size();
     }
 
     public int listShelves() {
-        return 0;
+        return listShelves(false);
     }
 
     public Code removeReader(Reader aReader) {
