@@ -38,12 +38,25 @@ public class Library {
         }
     }
 
-    private Code addBookToShelf(Book aBook, Shelf aShelf) {
-        return null;
-    }
+//    private Code addBookToShelf(Book aBook, Shelf aShelf) {
+//        return null;
+//    }
 
-    public Code addReader(Reader aReader) {
-        return null;
+    public Code addReader(Reader reader) {
+        if(readers.contains(reader)) {
+            System.out.println(reader.getName() + " already has an account!");
+            return Code.READER_ALREADY_EXISTS_ERROR;
+        } else if(getReaderByCard(reader.getCardNumber()) != null) {
+            System.out.println(getReaderByCard(reader.getCardNumber()).getName() + " and " + reader.getName() + "have the same card number!");
+            return Code.READER_CARD_NUMBER_ERROR;
+        } else {
+            readers.add(reader);
+            System.out.println(reader.getName() + " added to the library!");
+        }
+        if(reader.getCardNumber() > libraryCard) {
+            libraryCard = reader.getCardNumber();
+        }
+        return Code.SUCCESS;
     }
 
     public Code addShelf(Shelf aShelf) {
@@ -103,17 +116,70 @@ public class Library {
         }
     }
 
-    public LocalDate convertDate(String dateString, Code aCode) {
-        return null;
+    public LocalDate convertDate(String date, Code errorCode) {
+        String temp;
+        int num[] = new int[3];
+        if(date.equals("0000")) {
+            return LocalDate.EPOCH;
+        } else {
+            for (int i = 0; i < num.length; i++) {
+                if (date.isEmpty()) {
+                    System.out.println("Error: date conversion error, could not parse: " + date);
+                    System.out.println("Using default date (01-jan-1970)");
+                    return LocalDate.EPOCH;
+                }
+                temp = date.substring(0, date.indexOf("-"));
+                date = date.substring(date.indexOf("-"));
+                num[i] = convertInt(temp, Code.DATE_CONVERSION_ERROR);
+            }
+            if(num[2] < 0) {
+                System.out.println("Error converting date: Year " + num[2]);
+                System.out.println("Using default date (01-jan-1970)");
+                return LocalDate.EPOCH;
+            } else if (num[1] < 0) {
+                System.out.println("Error converting date: month " + num[1]);
+                System.out.println("Using default date (01-jan-1970)");
+                return LocalDate.EPOCH;
+            } else if (num[0] < 0) {
+                System.out.println("Error converting date: Day " + num[0]);
+                System.out.println("Using default date (01-jan-1970)");
+                return LocalDate.EPOCH;
+            }
+        }
+        return LocalDate.of(num[2],num[1],num[0]);
     }
 
-    public static int convertInt(String aString, Code aCode) {
-        return 0;
+    public static int convertInt(String recordCountString, Code code) {
+        Integer processedInt = -101;
+        try {
+            recordCountString.trim();
+            processedInt = Integer.parseInt(recordCountString);
+        } catch (NumberFormatException exception) {
+            if (code == Code.BOOK_COUNT_ERROR) {
+                System.out.println("Error: Could not read number of books");
+                return -2;
+            } else if (code == Code.PAGE_COUNT_ERROR) {
+                System.out.println("Error: could not parse page count");
+                return -8;
+            } else if (code == Code.DATE_CONVERSION_ERROR) {
+                System.out.println("Error: Could not parse date component");
+                return -101;
+            } else {
+                System.out.println("Error: Unknown conversion error");
+            }
+        }
+        return processedInt;
     }
 
-    private Code errorCode(int num) {
-        return null;
+    private Code errorCode(int codeNumber) {
+        for (Code code : Code.values()) {
+            if (code.getCode() == codeNumber) {
+                return code;
+            }
+        }
+        return Code.UNKNOWN_ERROR;
     }
+
 
     public Book getBookByISBN(String isbn) {
         Object[] allBooks = books.keySet().toArray();
@@ -129,22 +195,35 @@ public class Library {
     }
 
     public int getLibraryCardNumber() {
-        return this.libraryCard;
+        return this.libraryCard + 1;
     }
 
     public String getName(){
         return this.name;
     }
 
-    public Reader getReaderByCard(int cardNum) {
+    public Reader getReaderByCard(int cardNumber) {
+        for (int i = 0; i < readers.size(); i++) {
+            if(readers.get(i).getCardNumber() == cardNumber) {
+                return readers.get(i);
+            }
+        }
+        System.out.println("Could not find a reader with Card #" + cardNumber);
         return null;
     }
 
     public Shelf getShelf(String shelf) {
-        return null;
+        return shelves.get(shelf);
     }
 
-    public Shelf getShelf(int shelfNum) {
+    public Shelf getShelf(int shelfNumber) {
+        String[] allShelves = (String[]) shelves.keySet().toArray();
+        for (int i = 0; i < allShelves.length; i++) {
+            if(shelves.get(allShelves[i]).getShelfNumber() == shelfNumber) {
+                return shelves.get(allShelves[i]);
+            }
+        }
+        System.out.println("No shelf number " + shelfNumber + "found");
         return null;
     }
 
@@ -301,11 +380,23 @@ public class Library {
     }
 
     public int listReaders() {
-        return 0;
+        System.out.println(readers.toString());
+        return readers.size();
     }
 
     public int listReaders(boolean aBool) {
-        return 0;
+       StringBuilder sb = new StringBuilder();
+        if (aBool == true) {
+           for (int i = 0; i < readers.size(); i++) {
+               sb.append(readers.get(i).getName());
+               sb.append(" (#");
+               sb.append(readers.get(i).getCardNumber());
+               sb.append("\n");
+           }
+       } else {
+           listReaders();
+           }
+       return readers.size();
     }
 
     public int listShelves(boolean showBooks) {
@@ -325,8 +416,16 @@ public class Library {
         return listShelves(false);
     }
 
-    public Code removeReader(Reader aReader) {
-        return null;
+    public Code removeReader(Reader reader) {
+        if(readers.contains(reader) && !reader.getBooks().isEmpty()) {
+            System.out.println(reader.getName() + " must return all books!");
+            return Code.READER_STILL_HAS_BOOKS_ERROR;
+        } else if (!readers.contains(reader)) {
+            System.out.println(reader.getName() + " is not part of this library");
+            return Code.READER_NOT_IN_LIBRARY_ERROR;
+        }
+        readers.remove(reader);
+        return Code.SUCCESS;
     }
 
     public Code returnBook(Reader reader, Book book) {
