@@ -2,12 +2,12 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 public class Book {
-    public static final int AUTHOR_ = 0;
-    public static final int DUE_DATE_ = 1;
-    public static final int ISBN_ = 2;
+    public static final int AUTHOR_ = 4;
+    public static final int DUE_DATE_ = 5;
+    public static final int ISBN_ = 0;
     public static final int PAGE_COUNT_ = 3;
-    public static final int SUBJECT_ = 4;
-    public static final int TITLE_ = 5;
+    public static final int SUBJECT_ = 2;
+    public static final int TITLE_ = 1;
     private String author;
     private LocalDate dueDate;
     private String isbn;
@@ -15,7 +15,7 @@ public class Book {
     private String subject;
     private String title;
 
-    public Book(String author, String isbn, String subject, int pageCount, String title, LocalDate dueDate) {
+    public Book(String isbn, String title, String subject, int pageCount, String author, LocalDate dueDate) {
         this.author = author;
         this.isbn = isbn;
         this.subject = subject;

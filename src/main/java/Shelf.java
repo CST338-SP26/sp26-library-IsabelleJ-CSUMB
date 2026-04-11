@@ -20,7 +20,6 @@ public class Shelf {
     private String subject;
 
     public Shelf() {
-
         this(0, "");
     }
 
