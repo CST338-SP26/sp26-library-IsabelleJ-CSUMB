@@ -3,9 +3,19 @@ import Utilities.Code;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+
+/**
+ * @title Library.java
+ * @abstract part of Library project which initializes and does the logic for creating and managing the entire library.
+ * Doesn't fully work and code is a mess in some areas but this is as much as I can do without losing my sanity.
+ * @author Isabelle Johnson
+ * @version 1.0.0
+ * @Since 4/10/26
+ **/
 
 public class Library {
 
@@ -18,6 +28,9 @@ public class Library {
 
     public Library(String name) {
         this.name = name;
+        books = new HashMap<>();
+        shelves = new HashMap<>();
+        readers = new ArrayList<>();
     }
 
     public Code addBook(Book newBook) {
@@ -128,12 +141,19 @@ public class Library {
                     System.out.println("Using default date (01-jan-1970)");
                     return LocalDate.EPOCH;
                 }
-                temp = date.substring(0, date.indexOf("-"));
-                date = date.substring(date.indexOf("-"));
-                num[i] = convertInt(temp, Code.DATE_CONVERSION_ERROR);
+                if(date.contains("-")) {
+                    temp = date.substring(0, date.indexOf("-"));
+                    date = date.substring(date.indexOf("-")+1);
+                    num[i] = convertInt(temp, Code.DATE_CONVERSION_ERROR);
+                } else {
+                    temp = date;
+                    date = "";
+                    num[i] = convertInt(temp, Code.DATE_CONVERSION_ERROR);
+                }
+
             }
             if(num[2] < 0) {
-                System.out.println("Error converting date: Year " + num[2]);
+                System.out.println("Error converting date: Year " + num[0]);
                 System.out.println("Using default date (01-jan-1970)");
                 return LocalDate.EPOCH;
             } else if (num[1] < 0) {
@@ -141,12 +161,13 @@ public class Library {
                 System.out.println("Using default date (01-jan-1970)");
                 return LocalDate.EPOCH;
             } else if (num[0] < 0) {
-                System.out.println("Error converting date: Day " + num[0]);
+                System.out.println("Error converting date: Day " + num[2]);
                 System.out.println("Using default date (01-jan-1970)");
                 return LocalDate.EPOCH;
             }
         }
-        return LocalDate.of(num[2],num[1],num[0]);
+        LocalDate theDate = LocalDate.of(num[0],num[1],num[2]);
+        return theDate;
     }
 
     public static int convertInt(String recordCountString, Code code) {
@@ -217,7 +238,7 @@ public class Library {
     }
 
     public Shelf getShelf(int shelfNumber) {
-        String[] allShelves = (String[]) shelves.keySet().toArray();
+        Object[] allShelves = shelves.keySet().toArray();
         for (int i = 0; i < allShelves.length; i++) {
             if(shelves.get(allShelves[i]).getShelfNumber() == shelfNumber) {
                 return shelves.get(allShelves[i]);
@@ -230,10 +251,10 @@ public class Library {
     public Code init(String fileName) {
         int num;
         Code tempcode;
-        Scanner sc = new Scanner(System.in);
         try {
             FileReader reader = new FileReader(fileName);
-            num = convertInt(fileName, Code.BOOK_COUNT_ERROR);
+            Scanner sc = new Scanner(reader);
+            num = convertInt(sc.nextLine(), Code.BOOK_COUNT_ERROR);
             if (num < 0) {
                 return errorHandler(num);
             }
@@ -243,7 +264,7 @@ public class Library {
             }
             listBooks();
 
-            num = convertInt(fileName, Code.SHELF_COUNT_ERROR);
+            num = convertInt(sc.nextLine(), Code.SHELF_COUNT_ERROR);
             if (num < 0) {
                 return errorHandler(num);
             }
@@ -253,7 +274,7 @@ public class Library {
             }
             listShelves();
 
-            num = convertInt(fileName, Code.READER_COUNT_ERROR);
+            num = convertInt(sc.nextLine(), Code.READER_COUNT_ERROR);
             if (num < 0) {
                 return errorHandler(num);
             }
@@ -283,8 +304,14 @@ public class Library {
                 if(currentString.equals("")) {
                     return Code.BOOK_RECORD_COUNT_ERROR;
                 }
-                components[i] = currentString.substring(0, currentString.indexOf(","));
-                currentString = currentString.substring(currentString.indexOf(","));
+                if (!currentString.contains(",")) {
+                    components[j] = currentString;
+                    currentString = "";
+                } else {
+                    components[j] = currentString.substring(0, currentString.indexOf(","));
+                    currentString = currentString.substring(currentString.indexOf(",")+1);
+                }
+
             }
             currentBook.setAuthor(components[Book.AUTHOR_]);
             currentBook.setISBN(components[Book.ISBN_]);
@@ -294,7 +321,7 @@ public class Library {
             currentBook.setPageCount(convertInt(components[Book.PAGE_COUNT_], Code.PAGE_COUNT_ERROR));
             if(currentBook.getDueDate() == null) {
                 return Code.DATE_CONVERSION_ERROR;
-            } else if (currentBook.getPageCount() >1) {
+            } else if (currentBook.getPageCount() <1) {
                 return Code.PAGE_COUNT_ERROR;
             }
             addBook(currentBook);
@@ -306,7 +333,8 @@ public class Library {
         Reader currentReader;
         String currentString;
         Book checkBook;
-        String[] components = new String[5];
+        String[] components = new String[3];
+        String[] isbns = new String[0];
         if (readerCount < 1) {
             return Code.READER_COUNT_ERROR;
         }
@@ -317,18 +345,54 @@ public class Library {
                 if(currentString.equals("")) {
                     return Code.BOOK_RECORD_COUNT_ERROR;
                 }
-                components[i] = currentString.substring(0, currentString.indexOf(","));
-                currentString = currentString.substring(currentString.indexOf(","));
+                 else {
+                    if (!currentString.contains(",")) {
+                        components[j] = currentString;
+                        currentString = "";
+                    } else {
+                        components[j] = currentString.substring(0, currentString.indexOf(","));
+                        currentString = currentString.substring(currentString.indexOf(",")+1);
+                    }
+                }
+
             }
-            checkBook = getBookByISBN(components[Reader.BOOK_COUNT_]);
-            if (!books.containsKey(checkBook)) {
-                System.out.println("ERROR");
+            isbns = new String[convertInt(currentString.substring(0, currentString.indexOf(",")), Code.READER_COUNT_ERROR)*2];
+            currentString = currentString.substring(currentString.indexOf(",")+1);
+            for (int k = 0; k < isbns.length; k+= 2) {
+                if(currentString.equals("")) {
+                    isbns[k] = isbns[k-2];
+                    isbns[k+1] = isbns[k-1];
+                    break;
+                }
+                if (!currentString.contains(",")) {
+                    isbns[k] = currentString;
+                    currentString = "";
+                } else {
+                    isbns[k] = currentString.substring(0, currentString.indexOf(","));
+                    currentString = currentString.substring(currentString.indexOf(",")+1);
+                    if (!currentString.contains(",")) {
+                        isbns[k+1] = currentString;
+                        currentString = "";
+                    } else {
+                        isbns[k+1] = currentString.substring(0, currentString.indexOf(","));
+                        currentString = currentString.substring(currentString.indexOf(",")+1);
+                    }
+
+                }
+            }
+            for (int l = 0; l < isbns.length; l+= 2) {
+                checkBook = getBookByISBN(isbns[i]);
+                if (!books.containsKey(checkBook)) {
+                    System.out.println("ERROR");
+                } else {
+                    checkBook.setDueDate(convertDate(isbns[i+1], Code.DUE_DATE_ERROR));;
+                    currentReader.addBook(checkBook);
+                    checkOutBook(currentReader, currentReader.getBooks().get(0));
+                }
             }
             currentReader.setName(components[Reader.NAME_]);
             currentReader.setPhone(components[Reader.PHONE_]);
-            currentReader.getBooks().get(i).setDueDate(convertDate(components[Reader.BOOK_START_], Code.DUE_DATE_ERROR));
             currentReader.setCardNumber(convertInt(components[Reader.CARD_NUMBER_], Code.READER_CARD_NUMBER_ERROR));
-            checkOutBook(currentReader, currentReader.getBooks().get(i));
             addReader(currentReader);
 
         }
@@ -346,13 +410,18 @@ public class Library {
             currentShelf = new Shelf();
             currentString = scan.nextLine();
             for (int j = 0; j < components.length; j++) {
-                components[i] = currentString.substring(0, currentString.indexOf(","));
-                currentString = currentString.substring(currentString.indexOf(","));
+                if (!currentString.contains(",")) {
+                    components[j] = currentString;
+                    currentString = "";
+                } else {
+                    components[j] = currentString.substring(0, currentString.indexOf(","));
+                    currentString = currentString.substring(currentString.indexOf(",")+1);
+                }
             }
             currentShelf.setSubject(components[Shelf.SUBJECT_]);
             currentShelf.setShelfNumber(convertInt(components[Shelf.SHELF_NUMBER_], Code.SHELF_NUMBER_PARSE_ERROR));
 
-            if (currentShelf.getShelfNumber() > 1) {
+            if (currentShelf.getShelfNumber() < 1) {
                 return Code.SHELF_NUMBER_PARSE_ERROR;
             }
             addShelf(currentShelf);
@@ -400,7 +469,7 @@ public class Library {
     }
 
     public int listShelves(boolean showBooks) {
-        String[] allShelves = (String[]) shelves.keySet().toArray();
+        Object[] allShelves =  shelves.keySet().toArray();
         for (int i = 0; i < shelves.size(); i++) {
 
             if(showBooks == true) {
@@ -453,7 +522,7 @@ public class Library {
             System.out.println("No shelf for " + book.getTitle());
             return Code.SHELF_EXISTS_ERROR;
         } else {
-            shelves.get(book.getTitle()).addBook(book);
+            shelves.get(book.getSubject()).addBook(book);
             return Code.SUCCESS;
         }
     }
